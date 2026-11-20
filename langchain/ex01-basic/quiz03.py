@@ -10,12 +10,13 @@ messages = [
     SystemMessage(content='물어보는 것에만 단답으로 대답한다. 영단어를 물어보면 한국어로 번역한다.')
 ]
 
-question = input('영어 단어 입력(종료: exit): ')
-messages.append(HumanMessage(content=question))
-res = llm.invoke(messages)
-print(res.content)
+while True: 
+    q = input('영어 단어 입력(종료: exit): ')
 
-question2 = input('영어 단어 입력(종료: exit): ')
-messages.append(HumanMessage(content=question2))
-res = llm.invoke(messages)
-print(res.content)
+    if q.lower() == 'exit':
+        break
+
+    messages.append(HumanMessage(content=q))
+    res = llm.invoke(messages)
+    messages.append(res)
+    print(res.content)
