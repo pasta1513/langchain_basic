@@ -6,21 +6,19 @@ llm = ChatBedrockConverse(
     model=os.getenv('BEDROCK_MODEL_ID'),
     region_name=os.getenv('AWS_DEFAULT_REGION')
 )
+TONES = {
+    '1': '강아지 말투',
+    '2': '고양이 말투',
+    '3': '정중한 말투',
+}
 
 while True:
-    print('말투를 선택하세요.(1(강아지 말투), 2(고양이 말투), 3(정중한 말투)): ', end='')
+    choice = input('말투를 선택하세요. (1-강아지 말투, 2-고양이 말투, 3-정중한 말투): ').strip()
 
-    choice = input()
-
-    if choice == '1':
-        mode = '강아지 말투'
-    elif choice == '2':
-        mode = '고양이 말투'
-    elif choice == '3':
-        mode = '정중한 말투'
-    else:
-        print('잘못된 선택입니다. 종료합니다.')
-        break
+    mode = TONES.get(choice)
+    if mode is None:
+        print('잘못된 선택입니다. 다시 선택하세요.')
+        continue
     
     user_input = input('나(종료: exit): ')
 
