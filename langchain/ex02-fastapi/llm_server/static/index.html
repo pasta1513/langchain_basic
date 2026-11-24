@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="kor">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+    </head>
+    <body>
+        <h1>리뷰 분석 스트리밍 테스트</h1>
+        <textarea id="text" rows="3" cols="40">배송도 빠르고 품질도 좋아요. 다음에 또 살게요.</textarea>
+        <br>
+        <h3>1) 결과 : 한번에 모든 값 받기</h3>
+        <button id="go1">분석 결과</button><span id="timer1">동작시간 출력 위치</span>
+        <pre id="out1">결과 출력 위치</pre>
+        <hr>
+
+        <h3>2) 결과 : 스트리밍 </h3>
+        <button id="go2">스트리밍</button>
+        <span id="timer2"></span>
+        <pre id="out2"></pre>
+        <hr>
+
+        <script>
+            const text = document.getElementById("text");
+            document.getElementById("go1").addEventListener("click", async () => {
+                const out = document.getElementById("out1");
+                const timer = document.getElementById("timer1");
+                const btn = document.getElementById("go1");
+                const value = text.value.trim();
+                if (!value) return;
+
+                out.textContent = "";
+                btn.disabled = true;
+                const t0 = performance.now();   //소수점 까지 정밀하게 시간 얻어옴
+                const tick = setInterval(() => {    //toFixed : 소수점 1자리까지
+                    console.log(`함수 생성하여 사용`)
+                    timer.textContent = ((performance.now() - t0) / 1000).toFixed(1) + "s";
+                }, 100);
+
+                try {
+                    const res = await fetch("/review", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ text: value }),
+                    });
+                    data = await res.json()
+                    console.log("data : ", data)
+                    out.textContent += data["original"] + "\n"
+                    out.textContent += data['sentiment'] + "\n"
+                    out.textContent += data["summary"] + "\n"
+                    out.textContent += data["keyword"] + "\n"
+                } catch (e) {
+                    out.textContent += "[에러]" + e.message + "\n";
+                } finally {
+                    clearInterval(tick); //시간 종료
+                    btn.disabled = false; //버튼 활성화
+                }
+            });
+
+            document.getElementById("go2").addEventListener("click", async () => {
+                const out = document.getElementById("out2");
+                const timer = document.getElementById("timer2");
+                const btn = document.getElementById("go2");
+                const value = text.value.trim();
+                if (!value) return;
+                out.textContent = "";
+                btn.disabled = true;
+                const t0 = performance.now();
+                const tick = setInterval(() => {
+                    timer.textContent = ((performance.now() - t0) / 1000).toFixed(1) + "s";
+                }, 100);
+
+                try {
+                    const resp = await fetch("/review/summary-stream", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ text: value }),
+                    });
+
+                    // 서버 응답을 스트림방식으로 꺼내는 객체
+                    const reader = resp.body.getReader();
+                    // // await 스트림에서 조각 하나 꺼냄. 없으면 도착할 때까지 기다렸다 꺼냄
+                    // results = await reader.read() //await없으면 undefined 데이터가 안들어온다
+                    // console.log(results)
+                    // console.log(`${results["done"]} : ${results["value"]}`)
+
+                    const decoder = new TextDecoder(); //아스키값을 문자로 변환
+                    while(true){
+                        const {done, value} = await reader.read()
+                        if (done)
+                            break;
+                        //stream : 한글 처리시 잘린 바이트가 올 수 있어 true 설정. 다음에 들어오는 것과 합처서 한글 완성
+                        console.log(decoder.decode(value, { stream: true })) //true : 한글 깨짐 방지
+                        out.textContent += decoder.decode(value, { stream: true })
+                    }
+                } catch (e) {
+                    out.textContent += "[에러] " + e.message + "\n";
+                } finally {
+                    clearInterval(tick);
+                    btn.disabled = false;
+                }
+            });
+        </script>
+    </body>
+</html>
