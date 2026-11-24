@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body style="height: 100%; margin: 0; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column;">
+    <h1 style="margin-block-end: 0; margin-block-start: 4px;">친절한 챗봇</h1>
+    <hr style="margin-left: 0; margin-right: 0;">
+    <div id="chat" style="background-color: #eee; flex: 1; min-height: 0; overflow-y:auto; padding:8px;"></div>
+    <form id="form">
+        <input id="msg" style="width:80%;" placeholder="메시지 입력" autocomplete="off">
+        <button>전송</button>
+    </form>
+
+    <script>
+        const chat = document.getElementById('chat');
+        const form = document.getElementById('form');
+        const input = document.getElementById('msg');
+
+        function addLine(who, cls) {
+            const p = document.createElement('p');
+            p.style.margin = '6px 0';
+            if (cls) p.className = cls;
+            p.innerHTML = `<b>${who}</b> <span></span>`;
+            chat.appendChild(p);
+            chat.scrollTop = chat.scrollHeight; 
+            return p.querySelector('span');
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+
+            const mine = addLine('🙋');
+            mine.textContent = text;
+            mine.style.color = 'red';
+            const ai = addLine('🤖');
+
+            const res = await fetch('http://127.0.0.1:8001/chatbot/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ human_msg: text })
+            });
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                ai.textContent += decoder.decode(value, { stream: true });
+            }
+        });
+    </script>
+</body>
+</html>
