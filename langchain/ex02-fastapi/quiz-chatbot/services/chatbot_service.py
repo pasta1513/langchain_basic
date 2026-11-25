@@ -1,18 +1,14 @@
-from langchain_core.messages import HumanMessage, AIMessage
-
-from planners.chatbot_planner import chatbot_chain
 from agents.chatbot_agent import counselor_chain
 
-h=[]
+from services.history import get_history, add_turn
 
-async def chatbot_stream(human_msg: str):
+async def chatbot_stream(userid: str, human_msg: str):
     # res = await chatbot_chain.ainvoke({'human_msg': human_msg, 'history': h})
     # ai_msg = res['counselor']
 
-    full = ''
-    async for chunk in counselor_chain.astream({'human_msg': human_msg, 'history': h}):
-        full += chunk
+    ai_msg = ''
+    async for chunk in counselor_chain.astream({'human_msg': human_msg, 'history': get_history(userid)}):
+        ai_msg += chunk
         yield chunk
 
-    h.append(HumanMessage(content=human_msg))
-    h.append(AIMessage(content=full))
+    add_turn(userid, human_msg, ai_msg)

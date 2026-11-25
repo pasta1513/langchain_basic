@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 class ChatReq(BaseModel):
+    userid: str
     human_msg: str
 
 class ChatRes(BaseModel):
